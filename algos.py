@@ -218,6 +218,46 @@ def Davidson_Fletcher_Powell(inital_point: NDArray[np.float64],
     return x
     pass 
 
+# --------------------- BFGS ALGORITHM  ----------------------------
+def BFGS(inital_point: NDArray[np.float64],
+    f: Callable[[NDArray[np.float64]], np.float64 ],
+    d_f: Callable[[NDArray[np.float64]], NDArray[np.float64]],):
+    
+    # Initialize parameters
+    tolerance = 1e-6
+    k         = 0 
+    
+    # Point and B approximation 
+    x = inital_point
+    B = np.identity(len(inital_point))
+    
+    while k < 1e4 and np.linalg.norm(d_f(x)) > tolerance:
+        # g_k
+        gk = d_f(x) 
+        
+        # Search direction
+        dk = - np.dot(B, gk) 
+        
+        beta = get_step_size(x, f, d_f, dk)
+        
+        x_future = x + beta * dk 
+        
+        delta_x = beta * dk 
+        delta_g = d_f(x_future) - d_f(x) 
+        
+        rho = 1.0 / np.dot(delta_x, delta_g)
+        term1 = np.outer(delta_x, delta_x) * rho
+        term2 = (np.eye(len(inital_point)) - np.outer(delta_g, delta_x) * rho)
+        B = np.dot(term2, np.dot(B, term2.T)) + term1
+        
+        
+        x = x_future 
+        k += 1
+        
+    return x
+    pass 
+ 
+
 # --------------------- MAIN CODE -----------------------------
 
 
@@ -261,4 +301,5 @@ def bfgs(
     f: Callable[[NDArray[np.float64]], np.float64 ],
     d_f: Callable[[NDArray[np.float64]], NDArray[np.float64]],
 ) -> NDArray[np.float64]:
+    return BFGS(inital_point, f, d_f) 
     ...
