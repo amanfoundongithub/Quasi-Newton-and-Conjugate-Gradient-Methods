@@ -237,6 +237,7 @@ def main():
                     else:
                         row += [np.round(ans, 3)]
                 except Exception as e:
+                    print(e) 
                     print(f"Error in DFP")
                     print(
                         f"Test function was {test_case[0].__name__} with {test_case[2]} as starting point"
