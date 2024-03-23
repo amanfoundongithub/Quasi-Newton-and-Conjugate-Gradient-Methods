@@ -168,11 +168,16 @@ def Symmetric_Rank_One(inital_point: NDArray[np.float64],
         beta = get_step_size(x, f, d_f, dk)
         
         x_future = x + beta * dk 
+
+        # del_k
+        delta_x = x_future - x 
+        # gamma_k  
+        delta_gamma = d_f(x_future) - d_f(x)
         
-        delta_x = beta * dk 
-        delta_g = d_f(x_future) - d_f(x) 
+        # del_k - Bk*gamma_k
+        diff = delta_x - np.matmul(B, delta_gamma)
         
-        B = B + np.outer(delta_g, delta_g)/np.dot(delta_g, delta_x) 
+        B = B + np.outer(diff, diff)/np.dot(delta_gamma, diff) 
         
         x = x_future 
         k += 1
@@ -204,13 +209,16 @@ def Davidson_Fletcher_Powell(inital_point: NDArray[np.float64],
         
         x_future = x + beta * dk 
         
-        delta_x = beta * dk 
+        delta_x = x_future - x
         delta_g = d_f(x_future) - d_f(x) 
         
-        term1 = np.outer(delta_x, delta_x) / np.dot(delta_x, delta_g)
-        term2 = np.outer(np.dot(B, delta_g), np.dot(B, delta_g)) / np.dot(delta_g, np.dot(B, delta_g))
+        u = delta_x
+        v = - np.matmul(B, delta_g)
         
-        B = B - term1 + term2 
+        alpha = 1/np.dot(u, delta_g) 
+        beta  = 1/np.dot(v, delta_g)
+        
+        B = B + alpha * np.outer(u, u) + beta * np.outer(v, v) 
         
         x = x_future 
         k += 1
@@ -301,5 +309,6 @@ def bfgs(
     f: Callable[[NDArray[np.float64]], np.float64 ],
     d_f: Callable[[NDArray[np.float64]], NDArray[np.float64]],
 ) -> NDArray[np.float64]:
-    return BFGS(inital_point, f, d_f) 
+    # return BFGS(inital_point, f, d_f) 
+    return 
     ...
