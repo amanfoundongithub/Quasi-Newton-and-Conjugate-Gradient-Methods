@@ -5,7 +5,47 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os 
 
-def get_step_size(inital_point: NDArray[np.float64],
+
+x_values = []
+fx_values = []
+dfx_values = []
+def plot_values(algorithm : str, coordinate_size : int, initial_point, f : Callable[[NDArray[np.float64]], np.float64 ]):
+    
+    directory = "plots/" + algorithm
+    if not os.path.isdir(directory):
+        os.mkdir(directory)
+    if not os.path.isdir(directory + "/grad"):
+        os.mkdir(directory + "/grad")
+    if not os.path.isdir(directory + "/val"):
+        os.mkdir(directory + "/val") 
+    if not os.path.isdir(directory + "/contour"):
+        os.mkdir(directory + "/contour")
+    
+    # Plot val 
+    epochs = list(range(1, len(fx_values) + 1))
+     
+    
+    
+    plt.plot(epochs, fx_values, color = 'green')
+    plt.xlabel("Iterations")
+    plt.ylabel("f(x) values")
+    plt.title("Plot of f(x) vs iterations")
+    
+    plt.savefig(directory + "/val/" + f.__name__ + np.array2string(initial_point) + "_fig.png") 
+    plt.clf() 
+    
+   
+    plt.plot(epochs, dfx_values, color = 'orange')
+    plt.xlabel("Iterations")
+    plt.ylabel("|f'(x)| values")
+    plt.title("Plot of |f'(x)| vs iterations")
+    
+    plt.savefig(directory + "/grad/" + f.__name__ +  np.array2string(initial_point) + "_fig.png")
+    plt.clf() 
+    
+    
+    
+def get_step_size(initial_point: NDArray[np.float64],
     f: Callable[[NDArray[np.float64]], np.float64 ],
     d_f: Callable[[NDArray[np.float64]], NDArray[np.float64]],
     dk):
@@ -22,7 +62,7 @@ def get_step_size(inital_point: NDArray[np.float64],
     k = 0
     tolerance = 1e-6
     
-    x = inital_point
+    x = initial_point
     while k < 1e3:
         if f(x + t*dk) > f(x) + c1 * t * np.matmul(d_f(x), dk):
             beta = t  
@@ -37,7 +77,7 @@ def get_step_size(inital_point: NDArray[np.float64],
     
     return t  
 # ---------- HESTENES - STIEFEL ALGORITHM -----------------------
-def Hestenes_Stiefel(inital_point: NDArray[np.float64],
+def Hestenes_Stiefel(initial_point: NDArray[np.float64],
     f: Callable[[NDArray[np.float64]], np.float64],
     d_f: Callable[[NDArray[np.float64]], NDArray[np.float64]],):
     
@@ -45,12 +85,14 @@ def Hestenes_Stiefel(inital_point: NDArray[np.float64],
     k         = 0
     
     # Point
-    x  = inital_point
+    x  = initial_point
     D  = d_f(x) 
-    delta = -D
+    delta = -D 
     
     while k < 1e4 and np.linalg.norm(d_f(x)) > tolerance:
-        
+        x_values.append(x) 
+        fx_values.append(f(x))
+        dfx_values.append(np.linalg.norm(d_f(x))) 
         # Step siz
         beta_j = get_step_size(x, f, d_f, delta) 
         
@@ -58,6 +100,11 @@ def Hestenes_Stiefel(inital_point: NDArray[np.float64],
         x_temp = x + beta_j * delta 
         
         if np.linalg.norm(d_f(x_temp)) < tolerance:
+            x = x_temp 
+            x_values.append(x) 
+            fx_values.append(f(x))
+            dfx_values.append(np.linalg.norm(d_f(x))) 
+            plot_values("Hestenes_Stiefel", len(initial_point), initial_point, f)
             return x_temp
 
         else:
@@ -68,12 +115,15 @@ def Hestenes_Stiefel(inital_point: NDArray[np.float64],
             chi = D.dot(D - d)/ delta.dot(D - d) 
             
             delta = -D + chi * delta
-        pass 
         k += 1
     
+    x_values.append(x) 
+    fx_values.append(f(x))
+    dfx_values.append(np.linalg.norm(d_f(x))) 
+    plot_values("Hestenes_Stiefel", len(initial_point), initial_point, f)
     return x 
 
-def Polak_Ribiere(inital_point: NDArray[np.float64],
+def Polak_Ribiere(initial_point: NDArray[np.float64],
     f: Callable[[NDArray[np.float64]], np.float64],
     d_f: Callable[[NDArray[np.float64]], NDArray[np.float64]],):
     
@@ -81,12 +131,14 @@ def Polak_Ribiere(inital_point: NDArray[np.float64],
     k         = 0
     
     # Point
-    x  = inital_point
+    x  = initial_point
     D  = d_f(x) 
     delta = -D
     
     while k < 1e4 and np.linalg.norm(d_f(x)) > tolerance:
-        
+        x_values.append(x) 
+        fx_values.append(f(x))
+        dfx_values.append(np.linalg.norm(d_f(x))) 
         # Step siz
         beta_j = get_step_size(x, f, d_f, delta) 
         
@@ -94,6 +146,11 @@ def Polak_Ribiere(inital_point: NDArray[np.float64],
         x_temp = x + beta_j * delta 
         
         if np.linalg.norm(d_f(x_temp)) < tolerance:
+            x = x_temp 
+            x_values.append(x) 
+            fx_values.append(f(x))
+            dfx_values.append(np.linalg.norm(d_f(x))) 
+            plot_values("Polak_Ribiere", len(initial_point), initial_point, f)
             return x_temp
 
         else:
@@ -107,9 +164,13 @@ def Polak_Ribiere(inital_point: NDArray[np.float64],
         k += 1
         pass 
     
+    x_values.append(x) 
+    fx_values.append(f(x))
+    dfx_values.append(np.linalg.norm(d_f(x))) 
+    plot_values("Polak_Ribiere", len(initial_point), initial_point, f)
     return x
 
-def Fletcher_Reeves(inital_point: NDArray[np.float64],
+def Fletcher_Reeves(initial_point: NDArray[np.float64],
     f: Callable[[NDArray[np.float64]], np.float64],
     d_f: Callable[[NDArray[np.float64]], NDArray[np.float64]],):
     
@@ -117,12 +178,14 @@ def Fletcher_Reeves(inital_point: NDArray[np.float64],
     k         = 0
     
     # Point
-    x  = inital_point
+    x  = initial_point
     D  = d_f(x) 
     delta = -D
     
     while k < 1e4 and np.linalg.norm(d_f(x)) > tolerance:
-        
+        x_values.append(x) 
+        fx_values.append(f(x))
+        dfx_values.append(np.linalg.norm(d_f(x))) 
         # Step siz
         beta_j = get_step_size(x, f, d_f, delta) 
         
@@ -130,6 +193,11 @@ def Fletcher_Reeves(inital_point: NDArray[np.float64],
         x_temp = x + beta_j * delta 
         
         if np.linalg.norm(d_f(x_temp)) < tolerance:
+            x = x_temp 
+            x_values.append(x) 
+            fx_values.append(f(x))
+            dfx_values.append(np.linalg.norm(d_f(x)))
+            plot_values("Fletcher_Reeves", len(initial_point), initial_point, f)
             return x_temp
 
         else:
@@ -143,10 +211,14 @@ def Fletcher_Reeves(inital_point: NDArray[np.float64],
         pass 
         k += 1
     
+    x_values.append(x) 
+    fx_values.append(f(x))
+    dfx_values.append(np.linalg.norm(d_f(x))) 
+    plot_values("Fletcher_Reeves", len(initial_point), initial_point, f)
     return x
 
 # -------------- SR1 algorithm ---------------
-def Symmetric_Rank_One(inital_point: NDArray[np.float64],
+def Symmetric_Rank_One(initial_point: NDArray[np.float64],
     f: Callable[[NDArray[np.float64]], np.float64 ],
     d_f: Callable[[NDArray[np.float64]], NDArray[np.float64]],):
     
@@ -155,10 +227,13 @@ def Symmetric_Rank_One(inital_point: NDArray[np.float64],
     k         = 0 
     
     # Point and B approximation 
-    x = inital_point
-    B = np.identity(len(inital_point)) 
+    x = initial_point
+    B = np.identity(len(initial_point)) 
     
     while k < 1e4 and np.linalg.norm(d_f(x)) > tolerance:
+        x_values.append(x) 
+        fx_values.append(f(x))
+        dfx_values.append(np.linalg.norm(d_f(x))) 
         # g_k
         gk = d_f(x) 
         
@@ -181,12 +256,16 @@ def Symmetric_Rank_One(inital_point: NDArray[np.float64],
         
         x = x_future 
         k += 1
-        
+    
+    x_values.append(x) 
+    fx_values.append(f(x))
+    dfx_values.append(np.linalg.norm(d_f(x))) 
+    plot_values("Symmetric_Rank_One", len(initial_point), initial_point, f)
     return x 
     pass 
 
 # -------------- DAVIDSON FLETCHER POWELL ------------------
-def Davidson_Fletcher_Powell(inital_point: NDArray[np.float64],
+def Davidson_Fletcher_Powell(initial_point: NDArray[np.float64],
     f: Callable[[NDArray[np.float64]], np.float64 ],
     d_f: Callable[[NDArray[np.float64]], NDArray[np.float64]],):
     
@@ -195,10 +274,13 @@ def Davidson_Fletcher_Powell(inital_point: NDArray[np.float64],
     k         = 0 
     
     # Point and B approximation 
-    x = inital_point
-    B = np.identity(len(inital_point)) 
+    x = initial_point
+    B = np.identity(len(initial_point)) 
     
     while k < 1e4 and np.linalg.norm(d_f(x)) > tolerance:
+        x_values.append(x) 
+        fx_values.append(f(x))
+        dfx_values.append(np.linalg.norm(d_f(x))) 
         # g_k
         gk = d_f(x) 
         
@@ -222,12 +304,16 @@ def Davidson_Fletcher_Powell(inital_point: NDArray[np.float64],
         
         x = x_future 
         k += 1
-        
+    
+    x_values.append(x) 
+    fx_values.append(f(x))
+    dfx_values.append(np.linalg.norm(d_f(x))) 
+    plot_values("Davidson_Fletcher_Powell", len(initial_point), initial_point, f)
     return x
     pass 
 
 # --------------------- BROYDEN FLETCHER ALGORITHM  ----------------------------
-def BFGS(inital_point: NDArray[np.float64],
+def BFGS(initial_point: NDArray[np.float64],
     f: Callable[[NDArray[np.float64]], np.float64 ],
     d_f: Callable[[NDArray[np.float64]], NDArray[np.float64]],):
     
@@ -236,10 +322,13 @@ def BFGS(inital_point: NDArray[np.float64],
     k         = 0 
     
     # Point and B approximation 
-    x = inital_point
-    B = np.identity(len(inital_point))
+    x = initial_point
+    B = np.identity(len(initial_point))
     
     while k < 1e4 and np.linalg.norm(d_f(x)) > tolerance:
+        x_values.append(x) 
+        fx_values.append(f(x))
+        dfx_values.append(np.linalg.norm(d_f(x))) 
         # g_k
         gk = d_f(x) 
         
@@ -255,12 +344,16 @@ def BFGS(inital_point: NDArray[np.float64],
         
         rho = 1.0 / np.dot(delta_x, delta_g)
         term1 = np.outer(delta_x, delta_x) * rho
-        term2 = (np.eye(len(inital_point)) - np.outer(delta_g, delta_x) * rho)
+        term2 = (np.eye(len(initial_point)) - np.outer(delta_g, delta_x) * rho)
         B = np.matmul(term2, np.matmul(B, term2)) + term1
         
         x = x_future 
         k += 1
-        
+    
+    x_values.append(x) 
+    fx_values.append(f(x))
+    dfx_values.append(np.linalg.norm(d_f(x))) 
+    plot_values("BFGS", len(initial_point), initial_point, f)
     return x
     pass 
  
@@ -270,44 +363,55 @@ def BFGS(inital_point: NDArray[np.float64],
 
 
 def conjugate_descent(
-    inital_point: NDArray[np.float64],
+    initial_point: NDArray[np.float64],
     f: Callable[[NDArray[np.float64]], np.float64],
     d_f: Callable[[NDArray[np.float64]], NDArray[np.float64]],
     approach: Literal["Hestenes-Stiefel", "Polak-Ribiere", "Fletcher-Reeves"],
 ) -> NDArray[np.float64]:
+    x_values.clear()
+    fx_values.clear()
+    dfx_values.clear() 
     if approach == "Hestenes-Stiefel":
-        return Hestenes_Stiefel(inital_point, f, d_f) 
+        return Hestenes_Stiefel(initial_point, f, d_f) 
     elif approach == "Polak-Ribiere":
-        return Polak_Ribiere(inital_point, f, d_f) 
+        return Polak_Ribiere(initial_point, f, d_f) 
     elif approach == "Fletcher-Reeves":
-        return Fletcher_Reeves(inital_point, f, d_f)
+        return Fletcher_Reeves(initial_point, f, d_f)
     else: 
         raise NameError("Name not found") 
 
 
 def sr1(
-    inital_point: NDArray[np.float64],
+    initial_point: NDArray[np.float64],
     f: Callable[[NDArray[np.float64]], np.float64 ],
     d_f: Callable[[NDArray[np.float64]], NDArray[np.float64]],
 ) -> NDArray[np.float64]:
-    
-    return Symmetric_Rank_One(inital_point, f, d_f) 
+    x_values.clear()
+    fx_values.clear()
+    dfx_values.clear() 
+    return Symmetric_Rank_One(initial_point, f, d_f) 
     ...
 
 
 def dfp(
-    inital_point: NDArray[np.float64],
+    initial_point: NDArray[np.float64],
     f: Callable[[NDArray[np.float64]], np.float64],
     d_f: Callable[[NDArray[np.float64]], NDArray[np.float64]],
 ) -> NDArray[np.float64]:
-    return Davidson_Fletcher_Powell(inital_point, f, d_f) 
+    x_values.clear()
+    fx_values.clear()
+    dfx_values.clear() 
+    return Davidson_Fletcher_Powell(initial_point, f, d_f) 
     ...
 
 def bfgs(
-    inital_point: NDArray[np.float64],
+    initial_point: NDArray[np.float64],
     f: Callable[[NDArray[np.float64]], np.float64 ],
     d_f: Callable[[NDArray[np.float64]], NDArray[np.float64]],
 ) -> NDArray[np.float64]:
-    return BFGS(inital_point, f, d_f) 
+    x_values.clear()
+    fx_values.clear()
+    dfx_values.clear() 
+    return BFGS(initial_point, f, d_f) 
     # return 
     ...
