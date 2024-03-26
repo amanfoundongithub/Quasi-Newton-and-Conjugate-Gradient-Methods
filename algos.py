@@ -3,7 +3,7 @@ from typing import Callable, Literal
 from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 import numpy as np
-
+import os 
 
 def get_step_size(inital_point: NDArray[np.float64],
     f: Callable[[NDArray[np.float64]], np.float64 ],
@@ -226,7 +226,7 @@ def Davidson_Fletcher_Powell(inital_point: NDArray[np.float64],
     return x
     pass 
 
-# --------------------- BFGS ALGORITHM  ----------------------------
+# --------------------- BROYDEN FLETCHER ALGORITHM  ----------------------------
 def BFGS(inital_point: NDArray[np.float64],
     f: Callable[[NDArray[np.float64]], np.float64 ],
     d_f: Callable[[NDArray[np.float64]], NDArray[np.float64]],):
@@ -256,8 +256,7 @@ def BFGS(inital_point: NDArray[np.float64],
         rho = 1.0 / np.dot(delta_x, delta_g)
         term1 = np.outer(delta_x, delta_x) * rho
         term2 = (np.eye(len(inital_point)) - np.outer(delta_g, delta_x) * rho)
-        B = np.dot(term2, np.dot(B, term2.T)) + term1
-        
+        B = np.matmul(term2, np.matmul(B, term2)) + term1
         
         x = x_future 
         k += 1
@@ -309,6 +308,6 @@ def bfgs(
     f: Callable[[NDArray[np.float64]], np.float64 ],
     d_f: Callable[[NDArray[np.float64]], NDArray[np.float64]],
 ) -> NDArray[np.float64]:
-    # return BFGS(inital_point, f, d_f) 
-    return 
+    return BFGS(inital_point, f, d_f) 
+    # return 
     ...
