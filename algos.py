@@ -43,6 +43,40 @@ def plot_values(algorithm : str, coordinate_size : int, initial_point, f : Calla
     plt.savefig(directory + "/grad/" + f.__name__ +  np.array2string(initial_point) + "_fig.png")
     plt.clf() 
     
+    if len(initial_point) > 2:
+        plt.close()
+        return 
+    
+    x = np.linspace(- 5, 5, 100)
+    y = np.linspace(- 5, 5, 100)
+    X, Y = np.meshgrid(x, y)
+    
+    n = x.shape[0]
+    m = y.shape[0]
+    
+    Z = np.zeros(shape = (n,m)) 
+    for i in range(n):
+        for j in range(m):
+            Z[i][j] = f(np.array([x[i],y[j]])) 
+    
+    plt.figure(figsize=(8, 6))
+    plt.contour(X, Y, Z, levels=20, cmap='viridis')
+    plt.colorbar(label='Function Value')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title('Contour Plot of f(x)' )
+    
+    # for point in x_values:
+    #     plt.plot(point[0], point[1], 'ro')  # Red circles for points
+    for i in range(len(x_values)-1):
+        plt.arrow(x_values[i][0], x_values[i][1], x_values[i+1][0]- x_values[i][0], x_values[i+1][1]- x_values[i][1], 
+              head_width=0.1, head_length=0.1, fc='blue', ec='blue', linestyle='dashed', shape = 'full')
+    
+    plt.savefig(directory + "/contour/" + f.__name__ +  np.array2string(initial_point) + "_fig.png")
+     
+    plt.close()
+    return 
+    
     
     
 def get_step_size(initial_point: NDArray[np.float64],
